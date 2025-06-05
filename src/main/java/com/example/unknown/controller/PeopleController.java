@@ -42,6 +42,11 @@ public class PeopleController {
         return peopleInfoService.queryProjectPeoplePage(projectId, new Page<>(current, size));
     }
 
+    @GetMapping("/queryPeoplePageFileProjectPeople")
+    public Page<PeopleVo> queryPeoplePageFileProjectPeople(Long id, String nickname, Long projectId, long current, long size) {
+        return peopleInfoService.queryPeoplePageFileProjectPeople(id, nickname, projectId, new Page<>(current, size));
+    }
+
     @DeleteMapping("/delete")
     public Boolean delete(Long id) {
         String userName = ContextUtil.getUserName();
@@ -49,8 +54,8 @@ public class PeopleController {
     }
 
     @PostMapping("/updatePropertyShow")
-    public Boolean updatePropertyShow(Long id, Integer show) {
+    public Boolean updatePropertyShow(@RequestBody PeopleVo vo) {
         String userName = ContextUtil.getUserName();
-        return peoplePropertyService.updatePropertyShow(id, show, userName);
+        return peoplePropertyService.updatePropertyShow(vo.getPropertyId(), vo.getShow(), userName);
     }
 }

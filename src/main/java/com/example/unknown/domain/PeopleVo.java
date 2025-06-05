@@ -28,6 +28,10 @@ public class PeopleVo {
      */
     private List<Long> ids;
     /**
+     * 过滤主键ID集合
+     */
+    private List<Long> filterIds;
+    /**
      * 昵称
      */
     private String nickname;
@@ -48,6 +52,14 @@ public class PeopleVo {
      */
     private PeoplePropertyVo image;
     /**
+     * 是否显示
+     */
+    private Integer show;
+    /**
+     * 用户属性ID
+     */
+    private Long propertyId;
+    /**
      * 用户属性集合
      */
     private List<PeoplePropertyVo> propertyVos;
@@ -57,6 +69,10 @@ public class PeopleVo {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class PeoplePropertyVo {
+        /**
+         * 用户属性ID
+         */
+        private Long id;
         /**
          * 用户ID
          */

@@ -3,6 +3,7 @@ package com.example.unknown.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.unknown.domain.ProjectVO;
 import com.example.unknown.service.ProjectInfoService;
+import com.example.unknown.service.ProjectPeopleRelationService;
 import com.example.unknown.utils.ContextUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -16,6 +17,9 @@ public class ProjectController {
 
     @Autowired
     private ProjectInfoService projectInfoService;
+
+    @Autowired
+    private ProjectPeopleRelationService projectPeopleRelationService;
 
     @PostMapping("/createOrUpdate")
     public Boolean createOrUpdate(@Validated @RequestBody ProjectVO vo) {
@@ -50,5 +54,17 @@ public class ProjectController {
     public Boolean delete(Long id) {
         String userName = ContextUtil.getUserName();
         return projectInfoService.delete(id, userName);
+    }
+
+    @PostMapping("/batchAddPeople")
+    public Boolean batchAddPeople(@RequestBody ProjectVO vo) {
+        String userName = ContextUtil.getUserName();
+        return projectPeopleRelationService.batchAddPeople(vo.getId(), vo.getPeopleIds(), userName);
+    }
+
+    @PostMapping("/batchDeletePeople")
+    public Boolean batchDeletePeople(@RequestBody ProjectVO vo) {
+        String userName = ContextUtil.getUserName();
+        return projectPeopleRelationService.batchDeletePeople(vo.getId(), vo.getPeopleIds(), userName);
     }
 }

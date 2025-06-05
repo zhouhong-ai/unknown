@@ -99,6 +99,7 @@ public class PeopleInfoServiceImpl extends ServiceImpl<PeopleInfoDao, PeopleInfo
         LambdaQueryWrapper<PeopleInfo> queryWrapper = new LambdaQueryWrapper<PeopleInfo>()
                 .eq(Objects.nonNull(vo.getId()), PeopleInfo::getId, vo.getId())
                 .in(CollectionUtil.isNotEmpty(vo.getIds()), PeopleInfo::getId, vo.getIds())
+                .notIn(CollectionUtil.isNotEmpty(vo.getFilterIds()), PeopleInfo::getId, vo.getFilterIds())
                 .eq(StrUtil.isNotBlank(vo.getNickname()), PeopleInfo::getNickname, vo.getNickname())
                 .eq(PeopleInfo::getYn, YnEnum.YES.getCode())
                 .orderByDesc(PeopleInfo::getCreateAt);
@@ -162,6 +163,22 @@ public class PeopleInfoServiceImpl extends ServiceImpl<PeopleInfoDao, PeopleInfo
             return this.queryPage(vo, pPage);
         }
         return voPage;
+    }
+
+    @Override
+    public Page<PeopleVo> queryPeoplePageFileProjectPeople(Long id, String nickname, Long projectId, Page<PeopleInfo> page) {
+        if (Objects.isNull(projectId)) {
+            throw new APIException(AppCode.APP_ERROR, "项目ID不能为空！");
+        }
+
+        PeopleVo vo = new PeopleVo();
+        vo.setId(id);
+        vo.setNickname(nickname);
+        List<ProjectPeopleRelation> relations = projectPeopleRelationService.queryByProjectId(projectId);
+        if (CollectionUtil.isNotEmpty(relations)) {
+            vo.setFilterIds(relations.stream().map(ProjectPeopleRelation::getPeopleId).collect(Collectors.toList()));
+        }
+        return this.queryPage(vo, page);
     }
 
     /**

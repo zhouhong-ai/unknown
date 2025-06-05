@@ -141,7 +141,7 @@ public class ProjectInfoServiceImpl extends ServiceImpl<ProjectInfoDao, ProjectI
             throw new APIException(AppCode.APP_ERROR, "项目删除失败！");
         }
         // 删除参加用户
-
+        projectPeopleRelationService.batchDelete(id, userName);
         return true;
     }
 

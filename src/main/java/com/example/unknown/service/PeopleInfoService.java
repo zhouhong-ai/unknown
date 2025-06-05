@@ -27,4 +27,8 @@ public interface PeopleInfoService extends IService<PeopleInfo> {
      * 分页查询项目参与人员
      */
     Page<PeopleVo> queryProjectPeoplePage(Long projectId, Page<ProjectPeopleRelation> page);
+    /**
+     * 分页查询用户列表，且过滤当前项目已参与人员
+     */
+    Page<PeopleVo> queryPeoplePageFileProjectPeople(Long id, String nickname, Long projectId, Page<PeopleInfo> page);
 }

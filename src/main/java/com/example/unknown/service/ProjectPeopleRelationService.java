@@ -24,4 +24,14 @@ public interface ProjectPeopleRelationService extends IService<ProjectPeopleRela
      * 批量删除
      */
     void batchDelete(Long projectId, String userName);
+    /**
+     * 批量删除项目参与人员
+     */
+    Boolean batchDeletePeople(Long projectId, List<Long> peopleIds, String userName);
+    /**
+     * 根据项目ID查询全部
+     */
+    List<ProjectPeopleRelation> queryByProjectId(Long projectId);
+
+    Boolean batchAddPeople(Long id, List<Long> peopleIds, String userName);
 }

@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.UUID;
 
 @RestController
@@ -62,7 +61,7 @@ public class AuthController {
             //构造新文件的名称
             String objectName = UUID.randomUUID() + extension;
             return aliOssUtil.upload(file.getBytes(), objectName);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new APIException(AppCode.APP_ERROR, "文件上传失败!");
         }
     }
