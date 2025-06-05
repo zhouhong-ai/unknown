@@ -12,6 +12,10 @@ public interface PeopleInfoService extends IService<PeopleInfo> {
      */
     Boolean createOrUpdate(PeopleInfo peopleInfo);
     /**
+     * 根据ID获取详情
+     */
+    PeopleVo queryById(Long id);
+    /**
      * 分页查询
      */
     Page<PeopleVo> queryPage(PeopleVo vo, Page<PeopleInfo> page);

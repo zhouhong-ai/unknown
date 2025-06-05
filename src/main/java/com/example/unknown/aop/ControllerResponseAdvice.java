@@ -1,10 +1,11 @@
 package com.example.unknown.aop;
 
-import com.example.unknown.enums.ResultCode;
 import com.example.unknown.domain.ResultVo;
+import com.example.unknown.enums.ResultCode;
 import com.example.unknown.exception.APIException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -16,6 +17,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 /**
  * controller层-统一封装响应结果
  */
+@Slf4j
 @RestControllerAdvice(basePackages = {"com.example.unknown"})
 public class ControllerResponseAdvice implements ResponseBodyAdvice<Object> {
 

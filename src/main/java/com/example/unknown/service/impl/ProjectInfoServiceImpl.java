@@ -1,22 +1,26 @@
 package com.example.unknown.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.unknown.dao.ProjectInfoDao;
 import com.example.unknown.domain.ProjectInfo;
 import com.example.unknown.domain.ProjectVO;
 import com.example.unknown.enums.AppCode;
+import com.example.unknown.enums.ProjectStatusEnum;
 import com.example.unknown.enums.YnEnum;
 import com.example.unknown.exception.APIException;
-import com.example.unknown.service.LoginUerService;
+import com.example.unknown.service.BrowseLogInfoService;
 import com.example.unknown.service.ProjectInfoService;
 import com.example.unknown.service.ProjectPeopleRelationService;
 import com.example.unknown.utils.ContextUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +37,8 @@ public class ProjectInfoServiceImpl extends ServiceImpl<ProjectInfoDao, ProjectI
     private ProjectPeopleRelationService projectPeopleRelationService;
 
     @Autowired
-    private LoginUerService loginUerService;
+    @Lazy
+    private BrowseLogInfoService browseLogInfoService;
 
     @Autowired
     private ProjectInfoDao projectInfoDao;
@@ -69,6 +74,23 @@ public class ProjectInfoServiceImpl extends ServiceImpl<ProjectInfoDao, ProjectI
     }
 
     @Override
+    public ProjectVO queryById(Long id) {
+        ProjectVO projectVO = new ProjectVO();
+
+        ProjectInfo projectInfo = this.getById(id);
+        if (Objects.nonNull(projectInfo)) {
+            // 查询项目对应参加人数
+            Map<Long, Long> projectMap = projectPeopleRelationService.queryPeopleNumByProjectIds(Collections.singletonList(id));
+
+            BeanUtils.copyProperties(projectInfo, projectVO);
+            Long peopleNum = projectMap.get(projectInfo.getId());
+            projectVO.setPeopleNum(Objects.nonNull(peopleNum) ? peopleNum : 0);
+            projectVO.setLoginUserNum(browseLogInfoService.projectBrowseCount(id));
+        }
+        return projectVO;
+    }
+
+    @Override
     public Page<ProjectVO> queryPage(ProjectVO vo, Page<ProjectInfo> page) {
         Page<ProjectVO> voPage = new Page<>();
 
@@ -81,8 +103,6 @@ public class ProjectInfoServiceImpl extends ServiceImpl<ProjectInfoDao, ProjectI
             List<Long> projectIds = resultPage.getRecords().stream().map(ProjectInfo::getId).collect(Collectors.toList());
             // 查询项目对应参加人数
             Map<Long, Long> projectMap = projectPeopleRelationService.queryPeopleNumByProjectIds(projectIds);
-            // 查询项目对应浏览人数
-            Map<Long, Long> loginUserMap = loginUerService.queryLoginUserNumByProjectIds(projectIds);
 
             BeanUtils.copyProperties(resultPage, voPage);
             voPage.setRecords(resultPage.getRecords().stream().map(p -> {
@@ -90,8 +110,7 @@ public class ProjectInfoServiceImpl extends ServiceImpl<ProjectInfoDao, ProjectI
                 BeanUtils.copyProperties(p, projectVO);
                 Long peopleNum = projectMap.get(p.getId());
                 projectVO.setPeopleNum(Objects.nonNull(peopleNum) ? peopleNum : 0);
-                Long loginUserNum = loginUserMap.get(p.getId());
-                projectVO.setLoginUserNum(Objects.nonNull(loginUserNum) ? loginUserNum : 0);
+                projectVO.setLoginUserNum(browseLogInfoService.projectBrowseCount(p.getId()));
                 return projectVO;
             }).collect(Collectors.toList()));
         }
@@ -99,6 +118,7 @@ public class ProjectInfoServiceImpl extends ServiceImpl<ProjectInfoDao, ProjectI
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean updateStatus(Long id, Integer status, String userName) {
         this.checkProjectExist(id);
         // 修改项目状态
@@ -111,6 +131,7 @@ public class ProjectInfoServiceImpl extends ServiceImpl<ProjectInfoDao, ProjectI
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean delete(Long id, String userName) {
         this.checkProjectExist(id);
         // 项目删除
@@ -119,12 +140,25 @@ public class ProjectInfoServiceImpl extends ServiceImpl<ProjectInfoDao, ProjectI
         if (!this.updateById(updateProjectInfo)) {
             throw new APIException(AppCode.APP_ERROR, "项目删除失败！");
         }
+        // 删除参加用户
+
         return true;
     }
 
     @Override
-    public Map<Integer, Long> statusClassStatic() {
-        return projectInfoDao.statusClassStatic();
+    public Map<String, Long> statusClassStatic() {
+        Map<String, Long> map = new HashMap<>();
+
+        QueryWrapper<ProjectInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.groupBy("status");
+        queryWrapper.select("status", "count(1) AS count");
+        List<Map<String, Object>> maps = projectInfoDao.selectMaps(queryWrapper);
+        if (CollectionUtil.isNotEmpty(maps)) {
+            maps.forEach(m -> {
+                map.put(ProjectStatusEnum.projectStatusEnum(MapUtil.getInt(m, "status")).getDesc(), MapUtil.getLong(m, "count"));
+            });
+        }
+        return map;
     }
 
     /**

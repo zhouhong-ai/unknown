@@ -3,6 +3,7 @@ package com.example.unknown.service.impl;
 import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.unknown.dao.BrowseLogInfoDao;
@@ -18,9 +19,12 @@ import com.example.unknown.service.ProjectInfoService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Calendar;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -34,9 +38,14 @@ public class BrowseLogInfoServiceImpl extends ServiceImpl<BrowseLogInfoDao, Brow
     private LoginUerService loginUerService;
 
     @Autowired
+    @Lazy
     private ProjectInfoService projectInfoService;
 
+    @Autowired
+    private  BrowseLogInfoDao browseLogInfoDao;
+
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void insertBrowseProjectLog(Long loginUserId, Long projectId) {
         // 查询项目信息
         ProjectInfo projectInfo = projectInfoService.getById(projectId);
@@ -48,7 +57,7 @@ public class BrowseLogInfoServiceImpl extends ServiceImpl<BrowseLogInfoDao, Brow
                 projectId, Objects.nonNull(projectInfo) ? projectInfo.getName() : null);
         // 1、添加用户浏览项目日志
         BrowseLogInfo browseLogInfo = BrowseLogInfo.builder().loginUserId(loginUserId)
-                .content(content).type(BrowseTypeEnum.PROJECT.getCode())
+                .projectId(projectId).content(content).type(BrowseTypeEnum.PROJECT.getCode())
                 .createAt(Calendar.getInstance().getTime()).yn(YnEnum.YES.getCode()).build();
         boolean save = this.save(browseLogInfo);
         log.info("[添加项目浏览日志]结果：result={}, browseLogInfo={}", save, JSONObject.toJSONString(browseLogInfo));
@@ -69,18 +78,20 @@ public class BrowseLogInfoServiceImpl extends ServiceImpl<BrowseLogInfoDao, Brow
     public Page<LoginUerVo> queryPageByProjectId(Long projectId, Page<BrowseLogInfo> page) {
         Page<LoginUerVo> voPage = new Page<>();
 
-        LambdaQueryWrapper<BrowseLogInfo> queryWrapper = new LambdaQueryWrapper<BrowseLogInfo>()
-                .eq(BrowseLogInfo::getType, BrowseTypeEnum.PROJECT.getCode())
-                .like(BrowseLogInfo::getContent, String.format("项目ID【%s】", projectId))
-                .orderByDesc(BrowseLogInfo::getCreateAt)
-                .groupBy(BrowseLogInfo::getLoginUserId);
-        Page<BrowseLogInfo> resultPage = this.page(page, queryWrapper);
-        if (CollectionUtil.isNotEmpty(resultPage.getRecords())) {
-            Page<LoginUer> loginUerPage = new Page<>();
-            BeanUtils.copyProperties(page, loginUerPage);
-            LoginUerVo vo = new LoginUerVo();
-            vo.setIds(resultPage.getRecords().stream().map(BrowseLogInfo::getLoginUserId).collect(Collectors.toList()));
-            return loginUerService.queryPage(vo, loginUerPage);
+        if (Objects.nonNull(projectId)) {
+            QueryWrapper<BrowseLogInfo> queryWrapper = new QueryWrapper<>();
+            queryWrapper.groupBy("login_user_id")
+                    .eq("type", BrowseTypeEnum.PROJECT.getCode())
+                    .like("content", String.format("项目ID【%s】", projectId))
+                    .select("login_user_id");
+            List<BrowseLogInfo> browseLogInfos = browseLogInfoDao.selectList(queryWrapper);
+            if (CollectionUtil.isNotEmpty(browseLogInfos)) {
+                Page<LoginUer> loginUerPage = new Page<>();
+                BeanUtils.copyProperties(page, loginUerPage);
+                LoginUerVo vo = new LoginUerVo();
+                vo.setIds(browseLogInfos.stream().map(BrowseLogInfo::getLoginUserId).collect(Collectors.toList()));
+                return loginUerService.queryPage(vo, loginUerPage);
+            }
         }
         return voPage;
     }

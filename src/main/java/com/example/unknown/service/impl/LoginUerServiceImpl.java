@@ -17,6 +17,7 @@ import com.example.unknown.service.LoginUerService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +31,7 @@ public class LoginUerServiceImpl extends ServiceImpl<LoginUerDao, LoginUer> impl
     private LoginUerDao loginUerDao;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean create(LoginUer loginUer) {
         loginUer.setYn(YnEnum.YES.getCode());
         if (!this.save(loginUer)) {
@@ -77,6 +79,7 @@ public class LoginUerServiceImpl extends ServiceImpl<LoginUerDao, LoginUer> impl
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean updateLastBrowseProjectId(Long id, Long projectId) {
         return this.updateById(LoginUer.builder().id(id).lastBrowseProjectId(projectId).build());
     }

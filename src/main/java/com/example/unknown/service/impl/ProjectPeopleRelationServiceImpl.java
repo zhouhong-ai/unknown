@@ -4,7 +4,6 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.map.MapUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.conditions.update.LambdaUpdateChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.unknown.dao.ProjectPeopleRelationDao;
@@ -34,11 +33,10 @@ public class ProjectPeopleRelationServiceImpl extends ServiceImpl<ProjectPeopleR
                 .eq(ProjectPeopleRelation::getProjectId, projectId).eq(ProjectPeopleRelation::getYn, YnEnum.YES.getCode()));
         if (CollectionUtil.isNotEmpty(list)) {
             // 先删除历史数据
-            LambdaUpdateChainWrapper<ProjectPeopleRelation> wrapper = this.lambdaUpdate().eq(ProjectPeopleRelation::getProjectId, projectId)
+            this.lambdaUpdate().eq(ProjectPeopleRelation::getProjectId, projectId)
                     .set(ProjectPeopleRelation::getModifyAt, Calendar.getInstance().getTime())
                     .set(ProjectPeopleRelation::getModifyName, userName)
-                    .set(ProjectPeopleRelation::getYn, YnEnum.NO.getCode());
-            this.update(wrapper);
+                    .set(ProjectPeopleRelation::getYn, YnEnum.NO.getCode()).update();
         }
         // 添加关系
         if (CollectionUtil.isNotEmpty(peopleIds)) {
@@ -74,5 +72,19 @@ public class ProjectPeopleRelationServiceImpl extends ServiceImpl<ProjectPeopleR
                 .eq(ProjectPeopleRelation::getYn, YnEnum.YES.getCode())
                 .orderByAsc(ProjectPeopleRelation::getCreateAt);
         return this.page(page, queryWrapper);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchDelete(Long projectId, String userName) {
+        List<ProjectPeopleRelation> list = this.list(new LambdaQueryWrapper<ProjectPeopleRelation>().eq(ProjectPeopleRelation::getPeopleId, projectId).eq(ProjectPeopleRelation::getYn, YnEnum.YES.getCode()));
+        if (CollectionUtil.isNotEmpty(list)) {
+            // 删除历史属性
+            this.lambdaUpdate().eq(ProjectPeopleRelation::getProjectId, projectId)
+                    .eq(ProjectPeopleRelation::getYn, YnEnum.YES.getCode())
+                    .set(ProjectPeopleRelation::getModifyAt, Calendar.getInstance().getTime())
+                    .set(ProjectPeopleRelation::getModifyName, userName)
+                    .set(ProjectPeopleRelation::getYn, YnEnum.NO.getCode()).update();
+        }
     }
 }

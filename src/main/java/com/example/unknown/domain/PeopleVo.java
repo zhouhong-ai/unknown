@@ -8,8 +8,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.BeanUtils;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Data
@@ -33,6 +35,18 @@ public class PeopleVo {
      * 生日
      */
     private String birthday;
+    /**
+     * 体重
+     */
+    private PeoplePropertyVo weight;
+    /**
+     * 高度
+     */
+    private PeoplePropertyVo height;
+    /**
+     * 图片
+     */
+    private PeoplePropertyVo image;
     /**
      * 用户属性集合
      */
@@ -72,14 +86,31 @@ public class PeopleVo {
         peopleInfo.setCreateName(userName);
         peopleInfo.setModifyAt(Calendar.getInstance().getTime());
         peopleInfo.setModifyName(userName);
-
         // 属性
+        List<PeopleProperty> properties = new ArrayList<>();
+        if (Objects.nonNull(weight)) {
+            PeopleProperty property = new PeopleProperty();
+            BeanUtils.copyProperties(weight, property);
+            properties.add(property);
+        }
+        if (Objects.nonNull(height)) {
+            PeopleProperty property = new PeopleProperty();
+            BeanUtils.copyProperties(height, property);
+            properties.add(property);
+        }
+        if (Objects.nonNull(image)) {
+            PeopleProperty property = new PeopleProperty();
+            BeanUtils.copyProperties(image, property);
+            properties.add(property);
+        }
         if (CollectionUtil.isNotEmpty(propertyVos)) {
-            List<PeopleProperty> properties = propertyVos.stream().map(p -> {
-                PeopleProperty property = new PeopleProperty();
-                BeanUtils.copyProperties(p, property);
-                return property;
-            }).collect(Collectors.toList());
+             properties.addAll(propertyVos.stream().map(p -> {
+                 PeopleProperty property = new PeopleProperty();
+                 BeanUtils.copyProperties(p, property);
+                 return property;
+             }).collect(Collectors.toList()));
+        }
+        if (CollectionUtil.isNotEmpty(properties)) {
             peopleInfo.setProperties(properties);
         }
         return peopleInfo;

@@ -7,5 +7,9 @@ public interface BackendUserService extends IService<BackendUser> {
     /**
      * 用户账号密码验证
      */
-    boolean validateUser(String account, String password);
+    void validateUser(String account, String password);
+    /**
+     * 根据账号获取用户信息
+     */
+    BackendUser getByAccount(String account);
 }

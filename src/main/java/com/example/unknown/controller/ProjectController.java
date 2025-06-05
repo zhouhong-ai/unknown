@@ -1,7 +1,6 @@
 package com.example.unknown.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.example.unknown.domain.ProjectInfo;
 import com.example.unknown.domain.ProjectVO;
 import com.example.unknown.service.ProjectInfoService;
 import com.example.unknown.utils.ContextUtil;
@@ -12,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/project")
+@RequestMapping("/api/project")
 public class ProjectController {
 
     @Autowired
@@ -24,20 +23,27 @@ public class ProjectController {
         return projectInfoService.createOrUpdate(vo.buildProjectInfo(userName));
     }
 
+    @GetMapping("queryById")
+    public ProjectVO queryById(Long id) {
+        return projectInfoService.queryById(id);
+    }
+
     @GetMapping("/queryPage")
-    public Page<ProjectVO> queryPage(@RequestBody ProjectVO vo, Page<ProjectInfo> page) {
-        return projectInfoService.queryPage(vo, page);
+    public Page<ProjectVO> queryPage(String name, long current, long size) {
+        ProjectVO vo = new ProjectVO();
+        vo.setName(name);
+        return projectInfoService.queryPage(vo, new Page<>(current, size));
     }
 
     @GetMapping("/statusClassStatic")
-    public Map<Integer, Long> statusClassStatic() {
+    public Map<String, Long> statusClassStatic() {
         return projectInfoService.statusClassStatic();
     }
 
     @PostMapping("/updateStatus")
-    public Boolean updateStatus(Long id, Integer status) {
+    public Boolean updateStatus(@RequestBody ProjectVO vo) {
         String userName = ContextUtil.getUserName();
-        return projectInfoService.updateStatus(id, status, userName);
+        return projectInfoService.updateStatus(vo.getId(), vo.getStatus(), userName);
     }
 
     @DeleteMapping("/delete")

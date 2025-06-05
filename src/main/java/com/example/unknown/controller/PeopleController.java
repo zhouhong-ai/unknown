@@ -1,9 +1,7 @@
 package com.example.unknown.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.example.unknown.domain.PeopleInfo;
 import com.example.unknown.domain.PeopleVo;
-import com.example.unknown.domain.ProjectPeopleRelation;
 import com.example.unknown.service.PeopleInfoService;
 import com.example.unknown.service.PeoplePropertyService;
 import com.example.unknown.utils.ContextUtil;
@@ -11,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/people")
+@RequestMapping("/api/people")
 public class PeopleController {
 
     @Autowired
@@ -26,14 +24,22 @@ public class PeopleController {
         return peopleInfoService.createOrUpdate(vo.buildPeopleInfo(userName));
     }
 
+    @GetMapping("/queryById")
+    public PeopleVo queryById(Long id) {
+        return peopleInfoService.queryById(id);
+    }
+
     @GetMapping("/queryPage")
-    public Page<PeopleVo> queryPage(@RequestBody PeopleVo vo, Page<PeopleInfo> page) {
-        return peopleInfoService.queryPage(vo, page);
+    public Page<PeopleVo> queryPage(Long id, String nickname, long current, long size) {
+        PeopleVo vo = new PeopleVo();
+        vo.setId(id);
+        vo.setNickname(nickname);
+        return peopleInfoService.queryPage(vo, new Page<>(current, size));
     }
 
     @GetMapping("/queryProjectPeoplePage")
-    public Page<PeopleVo> queryProjectPeoplePage(Long projectId, Page<ProjectPeopleRelation> page) {
-        return peopleInfoService.queryProjectPeoplePage(projectId, page);
+    public Page<PeopleVo> queryProjectPeoplePage(Long projectId, long current, long size) {
+        return peopleInfoService.queryProjectPeoplePage(projectId, new Page<>(current, size));
     }
 
     @DeleteMapping("/delete")

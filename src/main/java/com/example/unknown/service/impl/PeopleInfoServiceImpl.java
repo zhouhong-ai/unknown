@@ -22,10 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service(value = "peopleInfoService")
@@ -68,13 +65,41 @@ public class PeopleInfoServiceImpl extends ServiceImpl<PeopleInfoDao, PeopleInfo
     }
 
     @Override
+    public PeopleVo queryById(Long id) {
+        PeopleVo peopleVo = new PeopleVo();
+
+        PeopleInfo peopleInfo = this.getById(id);
+        if (Objects.nonNull(peopleInfo)) {
+            Map<Long, List<PeopleVo.PeoplePropertyVo>> propertyMap = peoplePropertyService.queryPropertyByPeopleIds(Collections.singletonList(id));
+            BeanUtils.copyProperties(peopleInfo, peopleVo);
+            List<PeopleVo.PeoplePropertyVo> peoplePropertyVos = propertyMap.get(id);
+            if (CollectionUtil.isNotEmpty(peoplePropertyVos)) {
+                List<PeopleVo.PeoplePropertyVo> vos = new ArrayList<>();
+                for (PeopleVo.PeoplePropertyVo propertyVo : peoplePropertyVos) {
+                    if (propertyVo.getName().equals("身高")) {
+                        peopleVo.setHeight(propertyVo);
+                    } else if (propertyVo.getName().equals("体重")) {
+                        peopleVo.setWeight(propertyVo);
+                    } else if (propertyVo.getName().equals("图片")) {
+                        peopleVo.setImage(propertyVo);
+                    } else {
+                        vos.add(propertyVo);
+                    }
+                }
+                peopleVo.setPropertyVos(vos);
+            }
+        }
+        return peopleVo;
+    }
+
+    @Override
     public Page<PeopleVo> queryPage(PeopleVo vo, Page<PeopleInfo> page) {
         Page<PeopleVo> voPage = new Page<>();
 
         LambdaQueryWrapper<PeopleInfo> queryWrapper = new LambdaQueryWrapper<PeopleInfo>()
                 .eq(Objects.nonNull(vo.getId()), PeopleInfo::getId, vo.getId())
                 .in(CollectionUtil.isNotEmpty(vo.getIds()), PeopleInfo::getId, vo.getIds())
-                .eq(StrUtil.isNotBlank(vo.getNickname()), PeopleInfo::getModifyName, vo.getNickname())
+                .eq(StrUtil.isNotBlank(vo.getNickname()), PeopleInfo::getNickname, vo.getNickname())
                 .eq(PeopleInfo::getYn, YnEnum.YES.getCode())
                 .orderByDesc(PeopleInfo::getCreateAt);
         IPage<PeopleInfo> resultPage = this.page(page, queryWrapper);
@@ -87,7 +112,22 @@ public class PeopleInfoServiceImpl extends ServiceImpl<PeopleInfoDao, PeopleInfo
             voPage.setRecords(resultPage.getRecords().stream().map(p -> {
                 PeopleVo peopleVo = new PeopleVo();
                 BeanUtils.copyProperties(p, peopleVo);
-                peopleVo.setPropertyVos(propertyMap.get(p.getId()));
+                List<PeopleVo.PeoplePropertyVo> peoplePropertyVos = propertyMap.get(p.getId());
+                if (CollectionUtil.isNotEmpty(peoplePropertyVos)) {
+                    List<PeopleVo.PeoplePropertyVo> vos = new ArrayList<>();
+                    for (PeopleVo.PeoplePropertyVo propertyVo : peoplePropertyVos) {
+                        if (propertyVo.getName().equals("身高")) {
+                            peopleVo.setHeight(propertyVo);
+                        } else if (propertyVo.getName().equals("体重")) {
+                            peopleVo.setWeight(propertyVo);
+                        } else if (propertyVo.getName().equals("图片")) {
+                            peopleVo.setImage(propertyVo);
+                        } else {
+                            vos.add(propertyVo);
+                        }
+                    }
+                    peopleVo.setPropertyVos(vos);
+                }
                 return peopleVo;
             }).collect(Collectors.toList()));
         }
@@ -95,16 +135,17 @@ public class PeopleInfoServiceImpl extends ServiceImpl<PeopleInfoDao, PeopleInfo
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean delete(Long id, String userName) {
         this.checkPeopleExist(id);
         // 删除用户
         PeopleInfo updatePeopleInfo = PeopleInfo.builder().id(id)
-                .modifyAt(Calendar.getInstance().getTime()).modifyName(userName).build();
+                .modifyAt(Calendar.getInstance().getTime()).modifyName(userName).yn(YnEnum.NO.getCode()).build();
         if (!this.updateById(updatePeopleInfo)) {
             throw new APIException(AppCode.APP_ERROR, "用户删除失败！");
         }
         // 删除用户属性
-
+        peoplePropertyService.batchDelete(id, userName);
         return true;
     }
 
@@ -128,7 +169,7 @@ public class PeopleInfoServiceImpl extends ServiceImpl<PeopleInfoDao, PeopleInfo
      */
     private void checkPeopleExist(Long id) {
         PeopleInfo peopleInfo = this.getById(id);
-        if (Objects.nonNull(peopleInfo)) {
+        if (Objects.isNull(peopleInfo)) {
             throw new APIException(AppCode.APP_ERROR, "用户不存在！");
         }
     }

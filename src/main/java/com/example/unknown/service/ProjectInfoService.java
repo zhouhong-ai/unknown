@@ -13,6 +13,10 @@ public interface ProjectInfoService extends IService<ProjectInfo> {
      */
     Boolean createOrUpdate(ProjectInfo projectInfo);
     /**
+     * 根据ID获取详情
+     */
+    ProjectVO queryById(Long id);
+    /**
      * 分页查询
      */
     Page<ProjectVO> queryPage(ProjectVO vo, Page<ProjectInfo> page);
@@ -27,5 +31,5 @@ public interface ProjectInfoService extends IService<ProjectInfo> {
     /**
      * 项目状态分类统计数量
      */
-    Map<Integer, Long> statusClassStatic();
+    Map<String, Long> statusClassStatic();
 }

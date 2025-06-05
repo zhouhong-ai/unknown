@@ -20,4 +20,8 @@ public interface ProjectPeopleRelationService extends IService<ProjectPeopleRela
      * 分页查询
      */
     Page<ProjectPeopleRelation> queryByProjectIdPage(Long projectId, Page<ProjectPeopleRelation> page);
+    /**
+     * 批量删除
+     */
+    void batchDelete(Long projectId, String userName);
 }

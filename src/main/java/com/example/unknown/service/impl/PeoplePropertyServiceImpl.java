@@ -2,7 +2,6 @@ package com.example.unknown.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.conditions.update.LambdaUpdateChainWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.unknown.dao.PeoplePropertyDao;
 import com.example.unknown.domain.PeopleProperty;
@@ -45,15 +44,16 @@ public class PeoplePropertyServiceImpl extends ServiceImpl<PeoplePropertyDao, Pe
         List<PeopleProperty> list = this.list(new LambdaQueryWrapper<PeopleProperty>().eq(PeopleProperty::getPeopleId, peopleId).eq(PeopleProperty::getYn, YnEnum.YES.getCode()));
         if (CollectionUtil.isNotEmpty(list)) {
             // 删除历史属性
-            LambdaUpdateChainWrapper<PeopleProperty> wrapper = this.lambdaUpdate().eq(PeopleProperty::getPeopleId, peopleId)
+            this.lambdaUpdate().eq(PeopleProperty::getPeopleId, peopleId)
+                    .eq(PeopleProperty::getYn, YnEnum.YES.getCode())
                     .set(PeopleProperty::getModifyAt, Calendar.getInstance().getTime())
                     .set(PeopleProperty::getModifyName, userName)
-                    .set(PeopleProperty::getYn, YnEnum.NO.getCode());
-            this.update(wrapper);
+                    .set(PeopleProperty::getYn, YnEnum.NO.getCode()).update();
         }
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean updatePropertyShow(Long id, Integer show, String userName) {
         this.checkPropertyExist(id);
         // 修改用户属性是否展示

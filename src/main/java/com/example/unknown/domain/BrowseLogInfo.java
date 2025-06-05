@@ -28,14 +28,19 @@ public class BrowseLogInfo {
     @TableField(value = "login_user_id")
     private Long loginUserId;
     /**
+     * 项目ID
+     */
+    @TableField(value = "project_id")
+    private Long projectId;
+    /**
      * 浏览内容
      */
-    @TableField(value = "create_at")
+    @TableField(value = "content")
     private String content;
     /**
      * 类型：1（项目）
      */
-    @TableField(value = "create_at")
+    @TableField(value = "type")
     private Integer type;
     /**
      * 创建时间
