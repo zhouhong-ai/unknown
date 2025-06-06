@@ -10,6 +10,7 @@ import com.example.unknown.service.BackendUserService;
 import com.example.unknown.utils.AliOssUtil;
 import com.example.unknown.utils.ContextUtil;
 import com.example.unknown.utils.JwtTokenUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api")
 public class AuthController {
@@ -52,6 +54,15 @@ public class AuthController {
     @PostMapping("/upload")
     public String upload(MultipartFile file) {
         try {
+            if (file == null || file.isEmpty() || file.getInputStream().available() == 0) {
+                throw new APIException(AppCode.APP_ERROR, "没有有效的文件上传!");
+            }
+            // 获取文件的 MIME 类型
+            String contentType = file.getContentType();
+            // 检查文件是否为图片
+            if (StrUtil.isEmpty(contentType) || !contentType.startsWith("image/")) {
+                throw new APIException(AppCode.APP_ERROR, "上传必须是图片!");
+            }
             //原始文件名字
             String originalFilename = file.getOriginalFilename();
             //截取原始文件名后缀
@@ -62,7 +73,9 @@ public class AuthController {
             String objectName = UUID.randomUUID() + extension;
             return aliOssUtil.upload(file.getBytes(), objectName);
         } catch (Exception e) {
-            throw new APIException(AppCode.APP_ERROR, "文件上传失败!");
+            log.error("[文件上传]失败！", e);
+            throw new APIException(AppCode.APP_ERROR, String.format("文件上传失败：%s", e.getMessage()));
         }
     }
+
 }

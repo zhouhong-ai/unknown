@@ -158,9 +158,11 @@ public class PeopleInfoServiceImpl extends ServiceImpl<PeopleInfoDao, PeopleInfo
         if (CollectionUtil.isNotEmpty(relationPage.getRecords())) {
             PeopleVo vo = new PeopleVo();
             vo.setIds(relationPage.getRecords().stream().map(ProjectPeopleRelation::getPeopleId).collect(Collectors.toList()));
-            Page<PeopleInfo> pPage = new Page<>();
-            BeanUtils.copyProperties(page, pPage);
-            return this.queryPage(vo, pPage);
+            Page<PeopleVo> peopleVoPage = this.queryPage(vo, new Page<>(1, page.getSize()));
+            if (CollectionUtil.isNotEmpty(peopleVoPage.getRecords())) {
+                BeanUtils.copyProperties(relationPage, voPage);
+                voPage.setRecords(peopleVoPage.getRecords());
+            }
         }
         return voPage;
     }

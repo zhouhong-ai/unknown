@@ -96,6 +96,7 @@ public class ProjectInfoServiceImpl extends ServiceImpl<ProjectInfoDao, ProjectI
 
         LambdaQueryWrapper<ProjectInfo> queryWrapper = new LambdaQueryWrapper<ProjectInfo>()
                 .eq(StrUtil.isNotBlank(vo.getName()), ProjectInfo::getName, vo.getName())
+                .eq(Objects.nonNull(vo.getStatus()), ProjectInfo::getStatus, vo.getStatus())
                 .eq(ProjectInfo::getYn, YnEnum.YES.getCode())
                 .orderByDesc(ProjectInfo::getCreateAt);
         Page<ProjectInfo> resultPage = this.page(page, queryWrapper);

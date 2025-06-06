@@ -33,9 +33,10 @@ public class ProjectController {
     }
 
     @GetMapping("/queryPage")
-    public Page<ProjectVO> queryPage(String name, long current, long size) {
+    public Page<ProjectVO> queryPage(String name , Integer status, long current, long size) {
         ProjectVO vo = new ProjectVO();
         vo.setName(name);
+        vo.setStatus(status);
         return projectInfoService.queryPage(vo, new Page<>(current, size));
     }
 

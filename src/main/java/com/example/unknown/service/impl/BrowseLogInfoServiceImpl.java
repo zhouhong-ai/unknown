@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Calendar;
-import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -84,13 +83,15 @@ public class BrowseLogInfoServiceImpl extends ServiceImpl<BrowseLogInfoDao, Brow
                     .eq("type", BrowseTypeEnum.PROJECT.getCode())
                     .like("content", String.format("项目ID【%s】", projectId))
                     .select("login_user_id");
-            List<BrowseLogInfo> browseLogInfos = browseLogInfoDao.selectList(queryWrapper);
-            if (CollectionUtil.isNotEmpty(browseLogInfos)) {
-                Page<LoginUer> loginUerPage = new Page<>();
-                BeanUtils.copyProperties(page, loginUerPage);
+            Page<BrowseLogInfo> logInfoPage = browseLogInfoDao.selectPage(page, queryWrapper);
+            if (CollectionUtil.isNotEmpty(logInfoPage.getRecords())) {
                 LoginUerVo vo = new LoginUerVo();
-                vo.setIds(browseLogInfos.stream().map(BrowseLogInfo::getLoginUserId).collect(Collectors.toList()));
-                return loginUerService.queryPage(vo, loginUerPage);
+                vo.setIds(logInfoPage.getRecords().stream().map(BrowseLogInfo::getLoginUserId).collect(Collectors.toList()));
+                Page<LoginUerVo> uerVoPage = loginUerService.queryPage(vo, new Page<>(1, page.getSize()));
+                if (CollectionUtil.isNotEmpty(uerVoPage.getRecords())) {
+                    BeanUtils.copyProperties(logInfoPage, voPage);
+                    voPage.setRecords(uerVoPage.getRecords());
+                }
             }
         }
         return voPage;
